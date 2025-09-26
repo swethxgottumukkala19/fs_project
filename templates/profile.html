@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - TaskStreak{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user"></i> My Profile</h4>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Profile Photo -->
+                    <div class="text-center mb-4">
+                        <img src="{{ url_for('static', filename='uploads/profiles/' + user['profile_photo']) }}" 
+                             class="rounded-circle profile-photo mb-3" 
+                             width="150" 
+                             height="150"
+                             id="profilePhotoPreview"
+                             alt="{{ user['username'] }}"
+                             onerror="this.src='https://via.placeholder.com/150'">
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="$('#profilePhotoInput').click()">
+                                <i class="fas fa-camera"></i> Change Photo
+                            </button>
+                            <input type="file" id="profilePhotoInput" style="display: none;" accept="image/*">
+                        </div>
+                    </div>
+                    
+                    <!-- Stats -->
+                    <div class="row text-center mb-4">
+                        <div class="col-4">
+                            <div class="stat-box">
+                                <h3 class="text-warning"><i class="fas fa-fire"></i> {{ user['streak'] }}</h3>
+                                <p class="text-muted mb-0">Day Streak</p>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-box">
+                                <h3 class="text-success"><i class="fas fa-check-circle"></i> {{ user['tasks_completed'] }}</h3>
+                                <p class="text-muted mb-0">Tasks Done</p>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-box">
+                                <h3 class="text-primary"><i class="fas fa-user-friends"></i> -</h3>
+                                <p class="text-muted mb-0">Friends</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Profile Form -->
+                    <form method="POST" action="{{ url_for('update_profile') }}">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" value="{{ user['username'] }}" disabled>
+                            <small class="text-muted">Username cannot be changed</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" value="{{ user['email'] }}" disabled>
+                            <small class="text-muted">Email cannot be changed</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ user['name'] }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="bio" class="form-label">Bio</label>
+                            <textarea class="form-control" id="bio" name="bio" rows="3" placeholder="Tell us about yourself...">{{ user['bio'] }}</textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save"></i> Update Profile
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Profile photo upload
+    $('#profilePhotoInput').change(function() {
+        const file = this.files[0];
+        
+        if (file) {
+            // Preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#profilePhotoPreview').attr('src', e.target.result);
+            };
+            reader.readAsDataURL(file);
+            
+            // Upload
+            const formData = new FormData();
+            formData.append('profile_photo', file);
+            
+            $.ajax({
+                url: '{{ url_for("upload_profile_photo") }}',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                    } else {
+                        alert(response.message);
+                    }
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

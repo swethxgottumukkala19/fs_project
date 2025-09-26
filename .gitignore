@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Flask
+instance/
+.env
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads (optional - uncomment if you don't want to push user uploads)
+# static/uploads/profiles/*
+# static/uploads/stories/*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

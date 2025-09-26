@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}Home - TaskStreak{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- User Stats -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h3><i class="fas fa-fire"></i> {{ user['streak'] }}</h3>
+                    <p class="mb-0">Day Streak</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3><i class="fas fa-check-circle"></i> {{ user['tasks_completed'] }}</h3>
+                    <p class="mb-0">Tasks Completed</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stories Section -->
+    <div class="stories-section mb-4">
+        <h5 class="mb-3"><i class="fas fa-images"></i> Stories</h5>
+        <div class="stories-container">
+            {% if stories %}
+                {% for story in stories %}
+                <div class="story-item" onclick="viewStory({{ story['id'] }})">
+                    <div class="story-avatar">
+                        <img src="{{ url_for('static', filename='uploads/profiles/' + story['profile_photo']) }}" 
+                             alt="{{ story['username'] }}"
+                             onerror="this.src='https://via.placeholder.com/80'">
+                    </div>
+                    <small class="story-username">{{ story['username'] }}</small>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No stories yet. Complete a task and post your first story!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Today's Task Card -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg task-card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-tasks"></i> Today's Task</h4>
+                </div>
+                <div class="card-body p-4">
+                    <h3 class="text-center mb-4">{{ today_task }}</h3>
+                    
+                    {% if task_completed %}
+                        <div class="text-center">
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i> Task Completed! Great job! 🎉
+                            </div>
+                            <button class="btn btn-primary" onclick="showStoryModal()">
+                                <i class="fas fa-camera"></i> Add to Story
+                            </button>
+                        </div>
+                    {% else %}
+                        <div class="text-center">
+                            <button class="btn btn-success btn-lg" id="completeBtn">
+                                <i class="fas fa-check"></i> Complete Task
+                            </button>
+                            <div id="addStorySection" style="display: none;" class="mt-3">
+                                <button class="btn btn-primary btn-lg" onclick="showStoryModal()">
+                                    <i class="fas fa-camera"></i> Add to Story
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Task Completion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you completed today's task?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmCompleteBtn">Yes, Complete It!</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Story Modal -->
+<div class="modal fade" id="storyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Story</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="storyForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="storyImage" class="form-label">Upload Image</label>
+                        <input type="file" class="form-control" id="storyImage" name="image" accept="image/*" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="storyText" class="form-label">Add Caption (Optional)</label>
+                        <textarea class="form-control" id="storyText" name="text" rows="3" placeholder="Write something..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-paper-plane"></i> Post Story
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Story Modal -->
+<div class="modal fade" id="viewStoryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="storyUsername"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <img id="storyImage" src="" class="img-fluid w-100 mb-3" alt="Story">
+                <p id="storyCaption" class="mb-3"></p>
+                
+                <hr>
+                
+                <h6>Comments</h6>
+                <div id="commentsSection" class="mb-3">
+                    <!-- Comments will be loaded here -->
+                </div>
+                
+                <form id="commentForm">
+                    <input type="hidden" id="currentStoryId" name="story_id">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="commentText" name="comment" placeholder="Add a comment...">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Complete task button
+    $('#completeBtn').click(function() {
+        $('#confirmModal').modal('show');
+    });
+    
+    // Confirm completion
+    $('#confirmCompleteBtn').click(function() {
+        $.ajax({
+            url: '{{ url_for("complete_task") }}',
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    $('#confirmModal').modal('hide');
+                    alert(response.message);
+                    $('#completeBtn').hide();
+                    $('#addStorySection').show();
+                } else {
+                    alert(response.message);
+                }
+            }
+        });
+    });
+    
+    // Story form submission
+    $('#storyForm').submit(function(e) {
+        e.preventDefault();
+        
+        var formData = new FormData(this);
+        
+        $.ajax({
+            url: '{{ url_for("create_story") }}',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    alert(response.message);
+                    $('#storyModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert(response.message);
+                }
+            }
+        });
+    });
+    
+    // Comment form submission
+    $('#commentForm').submit(function(e) {
+        e.preventDefault();
+        
+        $.ajax({
+            url: '{{ url_for("add_comment") }}',
+            method: 'POST',
+            data: $(this).serialize(),
+            success: function(response) {
+                if (response.success) {
+                    $('#commentText').val('');
+                    // Reload story to show new comment
+                    viewStory($('#currentStoryId').val());
+                }
+            }
+        });
+    });
+});
+
+function showStoryModal() {
+    $('#storyModal').modal('show');
+}
+
+function viewStory(storyId) {
+    $.ajax({
+        url: '/get_story/' + storyId,
+        method: 'GET',
+        success: function(response) {
+            if (response.success) {
+                const story = response.story;
+                const comments = response.comments;
+                
+                $('#storyUsername').text(story.username);
+                $('#storyImage').attr('src', '{{ url_for("static", filename="uploads/stories/") }}' + story.image_path);
+                $('#storyCaption').text(story.text_content || '');
+                $('#currentStoryId').val(story.id);
+                
+                // Load comments
+                let commentsHtml = '';
+                comments.forEach(function(comment) {
+                    commentsHtml += `
+                        <div class="comment mb-2">
+                            <strong>${comment.username}:</strong> ${comment.comment_text}
+                        </div>
+                    `;
+                });
+                $('#commentsSection').html(commentsHtml || '<p class="text-muted">No comments yet</p>');
+                
+                $('#viewStoryModal').modal('show');
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

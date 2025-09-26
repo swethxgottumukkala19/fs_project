@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Friends - TaskStreak{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h3 class="mb-4"><i class="fas fa-user-friends"></i> My Friends</h3>
+            
+            {% if friends %}
+                <div class="row">
+                    {% for friend in friends %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card friend-card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ url_for('static', filename='uploads/profiles/' + friend['profile_photo']) }}" 
+                                         class="rounded-circle me-3" 
+                                         width="60" 
+                                         height="60"
+                                         alt="{{ friend['username'] }}"
+                                         onerror="this.src='https://via.placeholder.com/60'">
+                                    <div class="flex-grow-1">
+                                        <h5 class="mb-0">{{ friend['name'] }}</h5>
+                                        <p class="text-muted mb-1">@{{ friend['username'] }}</p>
+                                        <div class="friend-stats">
+                                            <span class="badge bg-warning text-dark me-2">
+                                                <i class="fas fa-fire"></i> {{ friend['streak'] }} streak
+                                            </span>
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check"></i> {{ friend['friend_tasks_completed'] }} tasks
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-sm btn-danger" onclick="removeFriend({{ friend['id'] }})">
+                                        <i class="fas fa-user-minus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> You don't have any friends yet. Start by searching for users below!
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <!-- Add Friend -->
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-plus"></i> Add Friend</h5>
+                </div>
+                <div class="card-body">
+                    <form id="searchForm">
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="searchUsername" placeholder="Enter username">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div id="searchResult"></div>
+                </div>
+            </div>
+            
+            <!-- Pending Requests -->
+            {% if pending_requests %}
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-clock"></i> Pending Requests</h5>
+                </div>
+                <div class="card-body">
+                    {% for request in pending_requests %}
+                    <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                        <img src="{{ url_for('static', filename='uploads/profiles/' + request['profile_photo']) }}" 
+                             class="rounded-circle me-3" 
+                             width="50" 
+                             height="50"
+                             alt="{{ request['username'] }}"
+                             onerror="this.src='https://via.placeholder.com/50'">
+                        <div class="flex-grow-1">
+                            <strong>{{ request['name'] }}</strong>
+                            <p class="text-muted mb-0 small">@{{ request['username'] }}</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-success me-1" onclick="acceptRequest({{ request['id'] }})">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="rejectRequest({{ request['id'] }})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Remove Modal -->
+<div class="modal fade" id="removeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Remove Friend</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to remove this friend?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmRemoveBtn">Remove</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let friendToRemove = null;
+
+$(document).ready(function() {
+    // Search for user
+    $('#searchForm').submit(function(e) {
+        e.preventDefault();
+        
+        const username = $('#searchUsername').val().trim();
+        
+        if (!username) {
+            alert('Please enter a username!');
+            return;
+        }
+        
+        $.ajax({
+            url: '{{ url_for("search_user") }}',
+            method: 'POST',
+            data: { username: username },
+            success: function(response) {
+                if (response.success) {
+                    const user = response.user;
+                    $('#searchResult').html(`
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ url_for('static', filename='uploads/profiles/') }}${user.profile_photo}" 
+                                         class="rounded-circle me-3" 
+                                         width="50" 
+                                         height="50"
+                                         onerror="this.src='https://via.placeholder.com/50'">
+                                    <div class="flex-grow-1">
+                                        <strong>${user.name}</strong>
+                                        <p class="text-muted mb-0 small">@${user.username}</p>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-sm w-100 mt-2" onclick="sendRequest(${user.id})">
+                                    <i class="fas fa-user-plus"></i> Add Friend
+                                </button>
+                            </div>
+                        </div>
+                    `);
+                } else {
+                    $('#searchResult').html(`
+                        <div class="alert alert-warning">${response.message}</div>
+                    `);
+                }
+            }
+        });
+    });
+    
+    // Confirm remove button
+    $('#confirmRemoveBtn').click(function() {
+        if (friendToRemove) {
+            $.ajax({
+                url: '/remove_friend/' + friendToRemove,
+                method: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        $('#removeModal').modal('hide');
+                        location.reload();
+                    }
+                }
+            });
+        }
+    });
+});
+
+function sendRequest(userId) {
+    $.ajax({
+        url: '{{ url_for("send_friend_request") }}',
+        method: 'POST',
+        data: { friend_id: userId },
+        success: function(response) {
+            alert(response.message);
+            if (response.success) {
+                $('#searchResult').html('');
+                $('#searchUsername').val('');
+            }
+        }
+    });
+}
+
+function acceptRequest(senderId) {
+    $.ajax({
+        url: '/accept_request/' + senderId,
+        method: 'POST',
+        success: function(response) {
+            if (response.success) {
+                alert(response.message);
+                location.reload();
+            }
+        }
+    });
+}
+
+function rejectRequest(senderId) {
+    $.ajax({
+        url: '/reject_request/' + senderId,
+        method: 'POST',
+        success: function(response) {
+            if (response.success) {
+                alert(response.message);
+                location.reload();
+            }
+        }
+    });
+}
+
+function removeFriend(friendId) {
+    friendToRemove = friendId;
+    $('#removeModal').modal('show');
+}
+</script>
+{% endblock %}
