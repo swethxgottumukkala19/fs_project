@@ -244,41 +244,50 @@ def create_story():
     user_id = session['user_id']
     
     if 'image' not in request.files:
-        return jsonify({'success': False, 'message': 'No image provided!'})
+        return jsonify({'success': False, 'message': 'No image uploaded'})
     
     file = request.files['image']
-    text_content = request.form.get('text', '')
     
     if file.filename == '':
-        return jsonify({'success': False, 'message': 'No file selected!'})
+        return jsonify({'success': False, 'message': 'No file selected'})
     
     if file and allowed_file(file.filename):
+        # Generate unique filename
         filename = secure_filename(file.filename)
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"{user_id}_{timestamp}_{filename}"
         
-        # Always use forward slashes for static files
-        upload_folder = os.path.join(app.root_path, 'static', 'uploads', 'stories')
-        os.makedirs(upload_folder, exist_ok=True)
-        filepath = os.path.join(upload_folder, filename)
+        # Save file
+        upload_dir = os.path.join('static', 'uploads', 'stories')
+        os.makedirs(upload_dir, exist_ok=True)
+        filepath = os.path.join(upload_dir, filename)
         file.save(filepath)
-        
-        # Save only the filename in DB
-        # Calculate expiry time (24 hours from now)
+
+        # Store DB path as relative to static
+        db_path = os.path.join('uploads', 'stories', filename).replace('\\', '/')
+
+
+        # Get caption and expiration
+        text_content = request.form.get('text', '')
         expires_at = datetime.now() + timedelta(hours=24)
-        
+
+        # Store in DB
         conn = get_db_connection()
         cursor = conn.cursor()
+
         cursor.execute('''
             INSERT INTO stories (user_id, image_path, text_content, expires_at)
             VALUES (?, ?, ?, ?)
-        ''', (user_id, filename, text_content, expires_at.strftime('%Y-%m-%d %H:%M:%S')))
+        ''', (user_id, db_path, text_content, expires_at.isoformat()))
+        
         conn.commit()
         conn.close()
         
-        return jsonify({'success': True, 'message': 'Story posted! 📸'})
+        return jsonify({'success': True, 'message': 'Story created successfully!'})
     
-    return jsonify({'success': False, 'message': 'Invalid file type!'})
+    else:
+        return jsonify({'success': False, 'message': 'Invalid file type'})
+
 
 @app.route('/get_story/<int:story_id>')
 @login_required
@@ -310,9 +319,12 @@ def get_story(story_id):
     
     conn.close()
     
+    # Convert story to dict and ensure image_path is just the filename
+    story_dict = dict(story)
+    
     return jsonify({
         'success': True,
-        'story': dict(story),
+        'story': story_dict,
         'comments': [dict(comment) for comment in comments]
     })
 

@@ -30,7 +30,7 @@
         <div class="stories-container">
             {% if stories %}
                 {% for story in stories %}
-                <div class="story-item" onclick="viewStory({{ story['id'] }})">
+                <div class="story-item" onclick="viewStory({{ story['id'] }}, '{{ story['image_path'] }}')">
                     <div class="story-avatar">
                         <img src="{{ url_for('static', filename='uploads/profiles/' + story['profile_photo']) }}" 
                              alt="{{ story['username'] }}"
@@ -137,20 +137,22 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <img id="storyImage" src="" class="img-fluid w-100 mb-3" alt="Story">
+                <div class="text-center mb-3">
+                    <img id="storyImage" src="" class="img-fluid" alt="Story" style="max-height: 500px; max-width: 100%; object-fit: contain;">
+                </div>
                 <p id="storyCaption" class="mb-3"></p>
                 
                 <hr>
                 
                 <h6>Comments</h6>
-                <div id="commentsSection" class="mb-3">
+                <div id="commentsSection" class="mb-3" style="max-height: 200px; overflow-y: auto;">
                     <!-- Comments will be loaded here -->
                 </div>
                 
                 <form id="commentForm">
                     <input type="hidden" id="currentStoryId" name="story_id">
                     <div class="input-group">
-                        <input type="text" class="form-control" id="commentText" name="comment" placeholder="Add a comment...">
+                        <input type="text" class="form-control" id="commentText" name="comment" placeholder="Add a comment..." required>
                         <button class="btn btn-primary" type="submit">
                             <i class="fas fa-paper-plane"></i>
                         </button>
@@ -165,8 +167,6 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-    const storiesBaseUrl = '{{ url_for("static", filename="uploads/stories/") }}';
-
     // Complete task button
     $('#completeBtn').click(function() {
         $('#confirmModal').modal('show');
@@ -186,6 +186,9 @@ $(document).ready(function() {
                 } else {
                     alert(response.message);
                 }
+            },
+            error: function() {
+                alert('Error completing task. Please try again.');
             }
         });
     });
@@ -194,6 +197,10 @@ $(document).ready(function() {
     $('#storyForm').submit(function(e) {
         e.preventDefault();
         var formData = new FormData(this);
+        
+        var submitBtn = $(this).find('button[type="submit"]');
+        submitBtn.prop('disabled', true).text('Uploading...');
+        
         $.ajax({
             url: '{{ url_for("create_story") }}',
             method: 'POST',
@@ -201,13 +208,19 @@ $(document).ready(function() {
             processData: false,
             contentType: false,
             success: function(response) {
+                submitBtn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Post Story');
                 if (response.success) {
                     alert(response.message);
                     $('#storyModal').modal('hide');
+                    $('#storyForm')[0].reset();
                     location.reload();
                 } else {
                     alert(response.message);
                 }
+            },
+            error: function() {
+                submitBtn.prop('disabled', false).html('<i class="fas fa-paper-plane"></i> Post Story');
+                alert('Error uploading story. Please try again.');
             }
         });
     });
@@ -215,6 +228,13 @@ $(document).ready(function() {
     // Comment form submission
     $('#commentForm').submit(function(e) {
         e.preventDefault();
+        var commentText = $('#commentText').val().trim();
+        
+        if (!commentText) {
+            alert('Please enter a comment!');
+            return;
+        }
+        
         $.ajax({
             url: '{{ url_for("add_comment") }}',
             method: 'POST',
@@ -222,8 +242,16 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     $('#commentText').val('');
-                    viewStory($('#currentStoryId').val());
+                    var storyId = $('#currentStoryId').val();
+                    var currentImgSrc = $('#storyImage').attr('src');
+                    var imagePath = currentImgSrc.split('/').pop();
+                    viewStory(storyId, imagePath);
+                } else {
+                    alert(response.message);
                 }
+            },
+            error: function() {
+                alert('Error adding comment. Please try again.');
             }
         });
     });
@@ -233,33 +261,52 @@ function showStoryModal() {
     $('#storyModal').modal('show');
 }
 
-function viewStory(storyId) {
-    const storiesBaseUrl = '/static/uploads/stories/';  // base URL
-
+function viewStory(storyId, imageFilename) {
+    console.log('Loading story ID:', storyId);
+    
     $.ajax({
         url: '/get_story/' + storyId,
         method: 'GET',
         success: function(response) {
+            console.log('Full response:', response);
+            
             if (response.success) {
                 const story = response.story;
                 const comments = response.comments;
 
                 $('#storyUsername').text(story.username);
-                $('#storyImage').attr('src', storiesBaseUrl + story.image_path); // append filename
+                
+                // EXACT SAME PATTERN AS YOUR WORKING EXAMPLE
+                $('#storyImage').attr('src', "{{ url_for('static', filename='uploads/stories') }}/" + story.image_path);
+                
                 $('#storyCaption').text(story.text_content || '');
                 $('#currentStoryId').val(story.id);
 
                 let commentsHtml = '';
-                comments.forEach(function(comment) {
-                    commentsHtml += `<div class="comment mb-2"><strong>${comment.username}:</strong> ${comment.comment_text}</div>`;
-                });
-                $('#commentsSection').html(commentsHtml || '<p class="text-muted">No comments yet</p>');
+                if (comments && comments.length > 0) {
+                    comments.forEach(function(comment) {
+                        commentsHtml += `
+                            <div class="comment mb-2 p-2 border-bottom">
+                                <strong>${comment.username}:</strong> ${comment.comment_text}
+                                <small class="text-muted d-block">${comment.created_at}</small>
+                            </div>
+                        `;
+                    });
+                } else {
+                    commentsHtml = '<p class="text-muted">No comments yet. Be the first to comment!</p>';
+                }
+                $('#commentsSection').html(commentsHtml);
 
                 $('#viewStoryModal').modal('show');
+            } else {
+                alert(response.message || 'Story not found!');
             }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX Error:', error);
+            alert('Error loading story. Please try again.');
         }
     });
 }
-
 </script>
 {% endblock %}
