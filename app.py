@@ -257,10 +257,13 @@ def create_story():
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         filename = f"{user_id}_{timestamp}_{filename}"
         
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'stories', filename)
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        # Always use forward slashes for static files
+        upload_folder = os.path.join(app.root_path, 'static', 'uploads', 'stories')
+        os.makedirs(upload_folder, exist_ok=True)
+        filepath = os.path.join(upload_folder, filename)
         file.save(filepath)
         
+        # Save only the filename in DB
         # Calculate expiry time (24 hours from now)
         expires_at = datetime.now() + timedelta(hours=24)
         

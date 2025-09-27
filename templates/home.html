@@ -165,6 +165,8 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
+    const storiesBaseUrl = '{{ url_for("static", filename="uploads/stories/") }}';
+
     // Complete task button
     $('#completeBtn').click(function() {
         $('#confirmModal').modal('show');
@@ -191,9 +193,7 @@ $(document).ready(function() {
     // Story form submission
     $('#storyForm').submit(function(e) {
         e.preventDefault();
-        
         var formData = new FormData(this);
-        
         $.ajax({
             url: '{{ url_for("create_story") }}',
             method: 'POST',
@@ -215,7 +215,6 @@ $(document).ready(function() {
     // Comment form submission
     $('#commentForm').submit(function(e) {
         e.preventDefault();
-        
         $.ajax({
             url: '{{ url_for("add_comment") }}',
             method: 'POST',
@@ -223,7 +222,6 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     $('#commentText').val('');
-                    // Reload story to show new comment
                     viewStory($('#currentStoryId').val());
                 }
             }
@@ -236,6 +234,8 @@ function showStoryModal() {
 }
 
 function viewStory(storyId) {
+    const storiesBaseUrl = '/static/uploads/stories/';  // base URL
+
     $.ajax({
         url: '/get_story/' + storyId,
         method: 'GET',
@@ -243,27 +243,23 @@ function viewStory(storyId) {
             if (response.success) {
                 const story = response.story;
                 const comments = response.comments;
-                
+
                 $('#storyUsername').text(story.username);
-                $('#storyImage').attr('src', '{{ url_for("static", filename="uploads/stories/") }}' + story.image_path);
+                $('#storyImage').attr('src', storiesBaseUrl + story.image_path); // append filename
                 $('#storyCaption').text(story.text_content || '');
                 $('#currentStoryId').val(story.id);
-                
-                // Load comments
+
                 let commentsHtml = '';
                 comments.forEach(function(comment) {
-                    commentsHtml += `
-                        <div class="comment mb-2">
-                            <strong>${comment.username}:</strong> ${comment.comment_text}
-                        </div>
-                    `;
+                    commentsHtml += `<div class="comment mb-2"><strong>${comment.username}:</strong> ${comment.comment_text}</div>`;
                 });
                 $('#commentsSection').html(commentsHtml || '<p class="text-muted">No comments yet</p>');
-                
+
                 $('#viewStoryModal').modal('show');
             }
         }
     });
 }
+
 </script>
 {% endblock %}
