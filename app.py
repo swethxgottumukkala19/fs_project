@@ -578,6 +578,29 @@ def upload_profile_photo():
     
     return jsonify({'success': False, 'message': 'Invalid file type!'})
 
+@app.route('/delete_story/<int:story_id>', methods=['POST'])
+@login_required
+def delete_story(story_id):
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Ensure the story belongs to the user
+    cursor.execute('SELECT image_path FROM stories WHERE id = ? AND user_id = ?', (story_id, user_id))
+    story = cursor.fetchone()
+    if not story:
+        conn.close()
+        return jsonify({'success': False, 'message': 'Story not found or not yours.'})
+    # Delete image file
+    image_path = os.path.join('static', story['image_path'])
+    if os.path.exists(image_path):
+        os.remove(image_path)
+    # Delete story from DB
+    cursor.execute('DELETE FROM stories WHERE id = ?', (story_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'message': 'Story deleted.'})
+
+
 if __name__ == '__main__':
     # Create upload directories
     os.makedirs('static/uploads/profiles', exist_ok=True)

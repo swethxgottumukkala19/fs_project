@@ -30,13 +30,16 @@
         <div class="stories-container">
             {% if stories %}
                 {% for story in stories %}
-                <div class="story-item" onclick="viewStory({{ story['id'] }}, '{{ story['image_path'] }}')">
+                <div class="story-item mx-2" onclick="viewStory({{ story['id'] }}, '{{ story['image_path'] }}')">
                     <div class="story-avatar">
-                        <img src="{{ url_for('static', filename='uploads/profiles/' + story['profile_photo']) }}" 
-                             alt="{{ story['username'] }}"
-                             onerror="this.src='https://via.placeholder.com/80'">
+                        <img src="{{ url_for('static', filename=story['image_path']) }}" alt="Story">
                     </div>
                     <small class="story-username">{{ story['username'] }}</small>
+                    {% if story['user_id'] == user['id'] %}
+                        <button class="btn btn-danger btn-sm mt-2" onclick="deleteStory({{ story['id'] }})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    {% endif %}
                 </div>
                 {% endfor %}
             {% else %}
@@ -318,6 +321,17 @@ function viewStory(storyId, imageFilename) {
         error: function(xhr, status, error) {
             console.error('AJAX Error:', error);
             alert('Error loading story. Please try again.');
+        }
+    });
+}
+
+function deleteStory(storyId) {
+    if (!confirm('Are you sure you want to delete this story?')) return;
+    $.post('/delete_story/' + storyId, function(response) {
+        if (response.success) {
+            location.reload();
+        } else {
+            alert(response.message);
         }
     });
 }
