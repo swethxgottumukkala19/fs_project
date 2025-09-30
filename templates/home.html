@@ -27,10 +27,10 @@
     <!-- Stories Section -->
     <div class="stories-section mb-4">
         <h5 class="mb-3"><i class="fas fa-images"></i> Stories</h5>
-        <div class="stories-container d-flex align-items-center">
+        <div class="stories-container">
             {% if stories %}
                 {% for story in stories %}
-                <div class="story-item mx-2" onclick="viewStory({{ story['id'] }}, '{{ story['image_path'] }}')">
+                <div class="story-item" onclick="viewStory({{ story['id'] }}, '{{ story['image_path'] }}')">
                     <div class="story-avatar">
                         <img src="{{ url_for('static', filename='uploads/profiles/' + story['profile_photo']) }}" 
                              alt="{{ story['username'] }}"
@@ -49,14 +49,46 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card shadow-lg task-card">
-                <div class="card-header">
-                    <i class="fas fa-list"></i> Today's Task
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-tasks"></i> Today's Task</h4>
                 </div>
-                <div class="card-body">
-                    <h3>Stretch for 10 minutes</h3>
-                    <button class="btn btn-primary btn-lg mt-3" onclick="showStoryModal()">
-                        <i class="fas fa-camera"></i> Add to Story
-                    </button>
+                <div class="card-body p-4 d-flex align-items-center justify-content-center" style="gap: 32px;">
+                    <!-- Fun Cat SVG Icon with transition -->
+                    <svg class="funny-cat" width="80" height="80" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" style="transition: transform 0.4s;">
+                      <circle cx="128" cy="128" r="120" fill="#6f42c1"/>
+                      <ellipse cx="128" cy="160" rx="60" ry="40" fill="#fff"/>
+                      <ellipse cx="98" cy="140" rx="16" ry="18" fill="#222"/>
+                      <ellipse cx="158" cy="140" rx="16" ry="18" fill="#222"/>
+                      <ellipse cx="98" cy="140" rx="7" ry="8" fill="#fff"/>
+                      <ellipse cx="158" cy="140" rx="7" ry="8" fill="#fff"/>
+                      <path d="M128 170 Q138 180 148 170" stroke="#222" stroke-width="4" fill="none"/>
+                      <path d="M60 80 Q90 60 128 80" stroke="#fff" stroke-width="6" fill="none"/>
+                      <path d="M196 80 Q166 60 128 80" stroke="#fff" stroke-width="6" fill="none"/>
+                    </svg>
+                    <div style="flex:1;">
+                        <h3 class="text-center mb-4">{{ today_task }}</h3>
+                        {% if task_completed %}
+                            <div class="text-center">
+                                <div class="alert alert-success">
+                                    <i class="fas fa-check-circle"></i> Task Completed! Great job! 🎉
+                                </div>
+                                <button class="btn btn-primary" onclick="showStoryModal()">
+                                    <i class="fas fa-camera"></i> Add to Story
+                                </button>
+                            </div>
+                        {% else %}
+                            <div class="text-center">
+                                <button class="btn btn-success btn-lg" id="completeBtn">
+                                    <i class="fas fa-check"></i> Complete Task
+                                </button>
+                                <div id="addStorySection" style="display: none;" class="mt-3">
+                                    <button class="btn btn-primary btn-lg" onclick="showStoryModal()">
+                                        <i class="fas fa-camera"></i> Add to Story
+                                    </button>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>

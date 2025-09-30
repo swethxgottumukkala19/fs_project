@@ -267,6 +267,7 @@ main {
     border-radius: 7px;
     margin: 2px 7px;
     font-weight: 500;
+    color: yellowgreen;
 }
 
 .dropdown-item:hover {
@@ -335,4 +336,8 @@ footer {
 .form-control:focus {
     border-color: #6f42c1;
     box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.18);
+}
+
+.funny-cat:hover {
+    transform: scale(1.15) rotate(-10deg);
 }
