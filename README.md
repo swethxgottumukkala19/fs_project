@@ -20,25 +20,40 @@ TaskStreak makes self-improvement social and competitive. By turning everyday ch
 
 ## Screenshots
 
+### Login Page
+<p align="center">
+  <img src="screenshots/login.png" alt="Login Page" width="600">
+</p>
+
+### Sign in Page
+<p align="center">
+  <img src="screenshots/signin.png" alt="Sign In Page" width="600">
+</p>
+
 ### Home Page
-
-
+<p align="center">
+  <img src="screenshots/home.png" alt="Home Page" width="600">
+</p>
 
 ### Today's Task Card
-
-
+<p align="center">
+  <img src="screenshots/task_card.png" alt="Today's Task Card" width="600">
+</p>
 
 ### Stories Section
-
-
+<p align="center">
+  <img src="screenshots/stories.png" alt="Stories Section" width="600">
+</p>
 
 ### Friends Page
-
-!
+<p align="center">
+  <img src="screenshots/friends.png" alt="Friends Page" width="600">
+</p>
 
 ### Profile Page
-
-
+<p align="center">
+  <img src="screenshots/profile.png" alt="Profile Page" width="600">
+</p>
 
 ---
 
