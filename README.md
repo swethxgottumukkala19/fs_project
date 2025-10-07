@@ -1,4 +1,4 @@
-# TaskStreak
+# TaskStreak- Your Daily Dose of Challenge and Consistency
 
 TaskStreak is a Gen Z–friendly productivity web app that helps you build a daily habit of completing fun and challenging tasks. Track your streaks, stay consistent, and share your progress with friends through interactive stories — just like Instagram!
 
