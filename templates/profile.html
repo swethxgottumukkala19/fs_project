@@ -80,6 +80,33 @@
                             <i class="fas fa-save"></i> Update Profile
                         </button>
                     </form>
+                    
+                    <!-- Delete Profile Button -->
+                    <button type="button" class="btn btn-danger w-100 mt-3" onclick="showDeleteProfileModal()">
+                        <i class="fas fa-trash"></i> Delete Profile
+                    </button>
+
+                    <!-- Delete Profile Confirmation Modal -->
+                    <div class="modal fade" id="deleteProfileModal" tabindex="-1">
+                      <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content bg-dark text-white">
+                          <div class="modal-header">
+                            <h5 class="modal-title"><i class="fas fa-exclamation-triangle text-danger"></i> Confirm Delete</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                          </div>
+                          <div class="modal-body">
+                            <p>
+                              Are you sure you want to <b>permanently delete</b> your profile? This action <span class="text-danger">cannot be undone</span>.<br>
+                              All your data, stories, and friendships will be removed forever.
+                            </p>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" onclick="deleteProfile()">Delete Permanently</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -123,5 +150,24 @@ $(document).ready(function() {
         }
     });
 });
+
+function showDeleteProfileModal() {
+    $('#deleteProfileModal').modal('show');
+}
+
+function deleteProfile() {
+    $.ajax({
+        url: "{{ url_for('delete_profile') }}",
+        method: "POST",
+        success: function(response) {
+            if (response.success) {
+                alert(response.message);
+                window.location.href = "{{ url_for('logout') }}";
+            } else {
+                alert(response.message);
+            }
+        }
+    });
+}
 </script>
 {% endblock %}

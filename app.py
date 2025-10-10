@@ -10,7 +10,7 @@ from database import init_db, get_db_connection
 from tasks import DAILY_TASKS, get_task_for_day
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-this-in-production'
+app.secret_key = 'secret-key'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
@@ -70,9 +70,31 @@ def clean_expired_stories():
     conn = get_db_connection()
     cursor = conn.cursor()
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    # Get expired stories and their image paths
+    cursor.execute('SELECT id, image_path FROM stories WHERE expires_at < ?', (current_time,))
+    expired_stories = cursor.fetchall()
+    for story in expired_stories:
+        image_path = os.path.join('static', story['image_path'])
+        if os.path.exists(image_path):
+            os.remove(image_path)
+        # Delete comments for this story
+        cursor.execute('DELETE FROM story_comments WHERE story_id = ?', (story['id'],))
+    # Delete expired stories from DB
     cursor.execute('DELETE FROM stories WHERE expires_at < ?', (current_time,))
     conn.commit()
     conn.close()
+
+# Context processor to inject pending friend requests count
+@app.context_processor
+def inject_pending_requests():
+    pending_requests_count = 0
+    if 'user_id' in session:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT COUNT(*) FROM friend_requests WHERE receiver_id = ? AND status = "pending"', (session['user_id'],))
+        pending_requests_count = cursor.fetchone()[0]
+        conn.close()
+    return dict(pending_requests_count=pending_requests_count)
 
 # Routes
 
@@ -599,6 +621,47 @@ def delete_story(story_id):
     conn.commit()
     conn.close()
     return jsonify({'success': True, 'message': 'Story deleted.'})
+
+@app.route('/delete_profile', methods=['POST'])
+@login_required
+def delete_profile():
+    user_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Delete user's stories and their images
+    cursor.execute('SELECT image_path FROM stories WHERE user_id = ?', (user_id,))
+    stories = cursor.fetchall()
+    for story in stories:
+        image_path = os.path.join('static', story['image_path'])
+        if os.path.exists(image_path):
+            os.remove(image_path)
+    cursor.execute('DELETE FROM stories WHERE user_id = ?', (user_id,))
+
+    # Delete user's profile photo
+    cursor.execute('SELECT profile_photo FROM users WHERE id = ?', (user_id,))
+    profile = cursor.fetchone()
+    if profile and profile['profile_photo']:
+        profile_path = os.path.join('static', 'uploads', 'profiles', profile['profile_photo'])
+        if os.path.exists(profile_path):
+            os.remove(profile_path)
+
+    # Remove user from friends' friendlists
+    cursor.execute('DELETE FROM friends WHERE user_id = ? OR friend_id = ?', (user_id, user_id))
+
+    # Remove friend requests sent or received
+    cursor.execute('DELETE FROM friend_requests WHERE sender_id = ? OR receiver_id = ?', (user_id, user_id))
+
+    # Remove story comments made by user
+    cursor.execute('DELETE FROM story_comments WHERE user_id = ?', (user_id,))
+
+    # Delete user account
+    cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+
+    conn.commit()
+    conn.close()
+    session.clear()
+    return jsonify({'success': True, 'message': 'Your profile and all related data have been deleted permanently.'})
 
 
 if __name__ == '__main__':

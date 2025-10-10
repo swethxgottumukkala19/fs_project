@@ -154,7 +154,7 @@
             </div>
             <div class="modal-body">
                 <div class="text-center mb-3">
-                    <img id="storyImage" src="" class="img-fluid" alt="Story" style="max-height: 500px; max-width: 100%; object-fit: contain;">
+                    <img id="viewStoryImage" src="" class="img-fluid" alt="Story" style="max-height: 500px; max-width: 100%; object-fit: contain;">
                 </div>
                 <p id="storyCaption" class="mb-3"></p>
                 
@@ -293,7 +293,7 @@ function viewStory(storyId, imageFilename) {
                 $('#storyUsername').text(story.username);
                 
                 // EXACT SAME PATTERN AS YOUR WORKING EXAMPLE
-                $('#storyImage').attr('src', "{{ url_for('static', filename='uploads/stories') }}/" + story.image_path);
+                $('#ViewStoryImage').attr('src', '/static/' + story.image_path);
                 
                 $('#storyCaption').text(story.text_content || '');
                 $('#currentStoryId').val(story.id);
